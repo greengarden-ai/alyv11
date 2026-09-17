@@ -6,7 +6,7 @@ import Card, { CardHeader } from '../../components/common/Card.jsx'
 import Badge from '../../components/common/Badge.jsx'
 import AgeIndicator from '../../components/common/AgeIndicator.jsx'
 
-const TODAY = new Date('2026-08-22T12:00:00Z')
+const TODAY = new Date()
 
 function ageDays(createdAt) {
   return Math.floor((TODAY - new Date(createdAt)) / (1000 * 60 * 60 * 24))

@@ -1,15 +1,17 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate, useBlocker } from 'react-router-dom'
 import { useAppState } from '../../context/AppContext.jsx'
 import { CREATE_TICKET } from '../../context/actions.js'
 import { genId } from '../../utils.js'
 import { TICKET_STATUSES } from '../../data/constants.js'
 import Card, { CardHeader } from '../../components/common/Card.jsx'
-import FormField, { Input, Select, Textarea } from '../../components/common/FormField.jsx'
+import FormField, { Input, Select } from '../../components/common/FormField.jsx'
 import Button from '../../components/common/Button.jsx'
 import StatusBanner from '../../components/common/StatusBanner.jsx'
 import JobSummaryCard from '../../components/domain/JobSummaryCard.jsx'
 import RentalStintRow from '../../components/domain/RentalStintRow.jsx'
+
+const DRAFT_KEY = 'aly_rental_ticket_draft'
 
 const BLANK_STINT = () => ({
   _key: Math.random(),
@@ -27,6 +29,74 @@ export default function RentalTicketScreen() {
   const [stints, setStints] = useState([BLANK_STINT()])
   const [errors, setErrors] = useState({})
   const [submitted, setSubmitted] = useState(null)
+  const [hasDraft, setHasDraft] = useState(false)
+  const [savedAt, setSavedAt] = useState(null)
+
+  const isDirty = Boolean(jobId || wellName || stints.some(s => s.startDate))
+
+  // Load draft on mount
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY)
+      if (raw) {
+        const parsed = JSON.parse(raw)
+        setHasDraft(true)
+        setSavedAt(parsed.savedAt ?? null)
+      }
+    } catch {}
+  }, [])
+
+  // Autosave on every change
+  useEffect(() => {
+    if (!isDirty) return
+    try {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify({
+        jobId, wellName, stints,
+        savedAt: new Date().toISOString(),
+      }))
+    } catch {}
+  }, [jobId, wellName, stints, isDirty])
+
+  // Warn on browser close/reload when dirty
+  useEffect(() => {
+    if (!isDirty) return
+    const handler = (e) => { e.preventDefault(); e.returnValue = '' }
+    window.addEventListener('beforeunload', handler)
+    return () => window.removeEventListener('beforeunload', handler)
+  }, [isDirty])
+
+  // Block in-app navigation when dirty
+  const blocker = useBlocker(
+    ({ currentLocation, nextLocation }) =>
+      isDirty && !submitted && currentLocation.pathname !== nextLocation.pathname
+  )
+
+  function restoreDraft() {
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY)
+      if (!raw) return
+      const parsed = JSON.parse(raw)
+      setJobId(parsed.jobId ?? '')
+      setWellName(parsed.wellName ?? '')
+      setStints(parsed.stints ?? [BLANK_STINT()])
+    } catch {}
+    setHasDraft(false)
+    localStorage.removeItem(DRAFT_KEY)
+  }
+
+  function dismissDraft() {
+    setHasDraft(false)
+    localStorage.removeItem(DRAFT_KEY)
+  }
+
+  function clearDraftAndReset() {
+    localStorage.removeItem(DRAFT_KEY)
+    setJobId('')
+    setWellName('')
+    setStints([BLANK_STINT()])
+    setSubmitted(null)
+    setHasDraft(false)
+  }
 
   const job = state.jobs.find(j => j.id === jobId)
 
@@ -70,6 +140,7 @@ export default function RentalTicketScreen() {
       invoiceId: null,
     }
     dispatch({ type: CREATE_TICKET, payload: ticket })
+    localStorage.removeItem(DRAFT_KEY)
     setSubmitted(ticket)
   }
 
@@ -85,9 +156,7 @@ export default function RentalTicketScreen() {
           </StatusBanner>
           <div style={{ marginTop: 'var(--space-4)', display: 'flex', gap: 'var(--space-3)' }}>
             <Button variant="navy" onClick={() => navigate('/biller/tickets')}>→ Go to Biller Queue</Button>
-            <Button variant="ghost" onClick={() => { setSubmitted(null); setJobId(''); setWellName(''); setStints([BLANK_STINT()]) }}>
-              + New Ticket
-            </Button>
+            <Button variant="ghost" onClick={clearDraftAndReset}>+ New Ticket</Button>
           </div>
         </Card>
       </div>
@@ -96,10 +165,58 @@ export default function RentalTicketScreen() {
 
   return (
     <div>
+      {/* Navigation blocker confirmation */}
+      {blocker.state === 'blocked' && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 1000,
+          background: 'rgba(13,43,78,0.5)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: 'var(--space-4)',
+        }}>
+          <div style={{
+            background: 'var(--card)', borderRadius: 'var(--radius-lg)',
+            boxShadow: 'var(--shadow-lg)', padding: 'var(--space-6)',
+            maxWidth: 400, width: '100%',
+          }}>
+            <h3 style={{ fontWeight: 700, fontSize: 'var(--text-lg)', marginBottom: 'var(--space-2)' }}>
+              Leave without saving?
+            </h3>
+            <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', marginBottom: 'var(--space-5)' }}>
+              Your rental ticket data will be saved as a draft and restored when you return.
+            </p>
+            <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
+              <Button variant="danger" onClick={() => blocker.proceed()}>Leave</Button>
+              <Button variant="ghost" onClick={() => blocker.reset()}>Stay on page</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="page-header">
         <h1 className="page-title">Rental Ticket</h1>
         <p className="page-subtitle">Capture rental periods for a well</p>
       </div>
+
+      {hasDraft && (
+        <div style={{ marginBottom: 'var(--space-4)' }}>
+          <StatusBanner type="warning">
+            You have an unsaved rental ticket{savedAt ? ` from ${new Date(savedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : ''}.{' '}
+            <button
+              onClick={restoreDraft}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700, color: '#7a4f00', textDecoration: 'underline', padding: 0 }}
+            >
+              Restore draft
+            </button>
+            {' · '}
+            <button
+              onClick={dismissDraft}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#7a4f00', textDecoration: 'underline', padding: 0 }}
+            >
+              Dismiss
+            </button>
+          </StatusBanner>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
         <Card>
@@ -139,8 +256,22 @@ export default function RentalTicketScreen() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-3)' }}>
                   <span style={{ fontWeight: 600, fontSize: 'var(--text-sm)', color: 'var(--navy)' }}>Stint {idx + 1}</span>
                   {stints.length > 1 && (
-                    <button type="button" onClick={() => removeStint(idx)}
-                      style={{ color: 'var(--status-flagged)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 18 }}>
+                    <button
+                      type="button"
+                      onClick={() => removeStint(idx)}
+                      aria-label={`Remove stint ${idx + 1}`}
+                      style={{
+                        width: 44, height: 44,
+                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                        color: 'var(--status-flagged)',
+                        background: 'rgba(198,40,40,0.08)',
+                        border: 'none',
+                        borderRadius: '50%',
+                        cursor: 'pointer',
+                        fontSize: 16,
+                        flexShrink: 0,
+                      }}
+                    >
                       ✕
                     </button>
                   )}

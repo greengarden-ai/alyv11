@@ -1,8 +1,8 @@
 export default function AgeIndicator({ daysOpen }) {
-  const color =
-    daysOpen > 30 ? 'var(--age-critical)' :
-    daysOpen > 15 ? 'var(--age-warn)' :
-    'var(--age-ok)'
+  const [color, severity] =
+    daysOpen > 30 ? ['var(--age-critical)', ' — critical'] :
+    daysOpen > 15 ? ['var(--age-warn)', ' — warning'] :
+    ['var(--age-ok)', '']
 
   return (
     <span style={{
@@ -13,8 +13,8 @@ export default function AgeIndicator({ daysOpen }) {
       fontWeight: 600,
       color,
     }}>
-      <span>⏱</span>
-      {daysOpen}d open
+      <span aria-hidden="true">⏱</span>
+      {daysOpen}d open{severity}
     </span>
   )
 }

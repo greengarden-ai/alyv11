@@ -1,16 +1,18 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate, useBlocker } from 'react-router-dom'
 import { useAppState } from '../../context/AppContext.jsx'
 import { CREATE_TICKET } from '../../context/actions.js'
 import { genId } from '../../utils.js'
 import { TICKET_STATUSES, OWNERSHIP_TYPES, CONTAINMENT_TYPES, EQUIPMENT_STATUSES } from '../../data/constants.js'
 import { getPriceBookDetails } from '../../data/priceBooks.js'
 import Card, { CardHeader } from '../../components/common/Card.jsx'
-import FormField, { Input, Select, Textarea } from '../../components/common/FormField.jsx'
+import FormField, { Input, Select } from '../../components/common/FormField.jsx'
 import Button from '../../components/common/Button.jsx'
 import StatusBanner from '../../components/common/StatusBanner.jsx'
 import JobSummaryCard from '../../components/domain/JobSummaryCard.jsx'
 import TruckingTicketTab from './TruckingTicketTab.jsx'
+
+const DRAFT_KEY = 'aly_field_ticket_draft'
 
 const BLANK_ITEM = () => ({
   _key: Math.random(),
@@ -23,6 +25,8 @@ const BLANK_ITEM = () => ({
   containmentSize: '',
   hasTruckingForm: false,
 })
+
+const BLANK_FORM = { crewSource: '', managerApproval: '', rigUpDate: '', rigDownDate: '' }
 
 const TabBar = ({ activeTab, onChange }) => {
   const tabs = [
@@ -45,6 +49,7 @@ const TabBar = ({ activeTab, onChange }) => {
           key={tab.id}
           onClick={() => !tab.disabled && onChange(tab.id)}
           disabled={tab.disabled}
+          title={tab.disabled ? 'Coming in V1' : undefined}
           style={{
             padding: 'var(--space-3) var(--space-4)',
             border: 'none',
@@ -70,20 +75,84 @@ export default function FieldTicketScreen() {
   const navigate = useNavigate()
   const [jobId, setJobId] = useState('')
   const [activeTab, setActiveTab] = useState(1)
-  const [form, setForm] = useState({
-    crewSource: '',
-    managerApproval: '',
-    rigUpDate: '',
-    rigDownDate: '',
-  })
+  const [form, setForm] = useState(BLANK_FORM)
   const [items, setItems] = useState([BLANK_ITEM()])
   const [errors, setErrors] = useState({})
   const [submitted, setSubmitted] = useState(null)
+  const [hasDraft, setHasDraft] = useState(false)
+  const [savedAt, setSavedAt] = useState(null)
+
+  const isDirty = Boolean(jobId || form.crewSource || form.rigUpDate || form.rigDownDate || form.managerApproval)
+
+  // Load draft on mount
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY)
+      if (raw) {
+        const parsed = JSON.parse(raw)
+        setHasDraft(true)
+        setSavedAt(parsed.savedAt ?? null)
+      }
+    } catch {}
+  }, [])
+
+  // Autosave on every change
+  useEffect(() => {
+    if (!isDirty) return
+    try {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify({
+        jobId, form, items, activeTab,
+        savedAt: new Date().toISOString(),
+      }))
+    } catch {}
+  }, [jobId, form, items, activeTab, isDirty])
+
+  // Warn on browser close/reload when dirty
+  useEffect(() => {
+    if (!isDirty) return
+    const handler = (e) => { e.preventDefault(); e.returnValue = '' }
+    window.addEventListener('beforeunload', handler)
+    return () => window.removeEventListener('beforeunload', handler)
+  }, [isDirty])
+
+  // Block in-app navigation when dirty
+  const blocker = useBlocker(
+    ({ currentLocation, nextLocation }) =>
+      isDirty && !submitted && currentLocation.pathname !== nextLocation.pathname
+  )
+
+  function restoreDraft() {
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY)
+      if (!raw) return
+      const parsed = JSON.parse(raw)
+      setJobId(parsed.jobId ?? '')
+      setForm(parsed.form ?? BLANK_FORM)
+      setItems(parsed.items ?? [BLANK_ITEM()])
+      setActiveTab(parsed.activeTab ?? 1)
+    } catch {}
+    setHasDraft(false)
+    localStorage.removeItem(DRAFT_KEY)
+  }
+
+  function dismissDraft() {
+    setHasDraft(false)
+    localStorage.removeItem(DRAFT_KEY)
+  }
+
+  function clearDraftAndReset() {
+    localStorage.removeItem(DRAFT_KEY)
+    setJobId('')
+    setForm(BLANK_FORM)
+    setItems([BLANK_ITEM()])
+    setActiveTab(1)
+    setSubmitted(null)
+    setHasDraft(false)
+  }
 
   const job = state.jobs.find(j => j.id === jobId)
   const yardEquipment = state.equipment.filter(e => e.status === EQUIPMENT_STATUSES.IN_YARD)
 
-  // Get active price book for display
   const activePriceBook = job ? state.activePriceBooks?.[job.id] : null
   const priceBookDisplay = activePriceBook ? getPriceBookDetails(job?.customerId, activePriceBook) : null
 
@@ -116,6 +185,7 @@ export default function FieldTicketScreen() {
     if (!form.crewSource.trim()) e.crewSource = 'Required'
     if (!form.rigUpDate) e.rigUpDate = 'Required'
     if (!form.rigDownDate) e.rigDownDate = 'Required'
+    else if (form.rigUpDate && form.rigDownDate < form.rigUpDate) e.rigDownDate = 'Rig-down must be after rig-up'
     if (!form.managerApproval.trim()) e.managerApproval = 'Required'
     if (!items.length) e.items = 'Add at least one equipment item'
     return e
@@ -148,6 +218,7 @@ export default function FieldTicketScreen() {
       invoiceId: null,
     }
     dispatch({ type: CREATE_TICKET, payload: ticket })
+    localStorage.removeItem(DRAFT_KEY)
     setSubmitted(ticket)
   }
 
@@ -165,7 +236,7 @@ export default function FieldTicketScreen() {
             <Button variant="navy" onClick={() => navigate('/biller/tickets')}>
               → Go to Biller Queue
             </Button>
-            <Button variant="ghost" onClick={() => { setSubmitted(null); setJobId(''); setForm({ crewSource: '', managerApproval: '', rigUpDate: '', rigDownDate: '' }); setItems([BLANK_ITEM()]) }}>
+            <Button variant="ghost" onClick={clearDraftAndReset}>
               + New Ticket
             </Button>
           </div>
@@ -176,10 +247,58 @@ export default function FieldTicketScreen() {
 
   return (
     <div>
+      {/* Navigation blocker confirmation */}
+      {blocker.state === 'blocked' && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 1000,
+          background: 'rgba(13,43,78,0.5)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: 'var(--space-4)',
+        }}>
+          <div style={{
+            background: 'var(--card)', borderRadius: 'var(--radius-lg)',
+            boxShadow: 'var(--shadow-lg)', padding: 'var(--space-6)',
+            maxWidth: 400, width: '100%',
+          }}>
+            <h3 style={{ fontWeight: 700, fontSize: 'var(--text-lg)', marginBottom: 'var(--space-2)' }}>
+              Leave without saving?
+            </h3>
+            <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', marginBottom: 'var(--space-5)' }}>
+              Your rig move ticket data will be saved as a draft and restored when you return.
+            </p>
+            <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
+              <Button variant="danger" onClick={() => blocker.proceed()}>Leave</Button>
+              <Button variant="ghost" onClick={() => blocker.reset()}>Stay on page</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="page-header">
         <h1 className="page-title">Field Ticket</h1>
         <p className="page-subtitle">Capture rig-up / rig-down, trucking, and service events</p>
       </div>
+
+      {hasDraft && (
+        <div style={{ marginBottom: 'var(--space-4)' }}>
+          <StatusBanner type="warning">
+            You have an unsaved rig move ticket{savedAt ? ` from ${new Date(savedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : ''}.{' '}
+            <button
+              onClick={restoreDraft}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700, color: '#7a4f00', textDecoration: 'underline', padding: 0 }}
+            >
+              Restore draft
+            </button>
+            {' · '}
+            <button
+              onClick={dismissDraft}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#7a4f00', textDecoration: 'underline', padding: 0 }}
+            >
+              Dismiss
+            </button>
+          </StatusBanner>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
         {/* Job Selection */}
@@ -195,7 +314,7 @@ export default function FieldTicketScreen() {
             </Select>
           </FormField>
           {job && <div style={{ marginTop: 'var(--space-3)' }}><JobSummaryCard job={job} compact /></div>}
-          
+
           {priceBookDisplay && (
             <div style={{ marginTop: 'var(--space-3)', padding: 'var(--space-3)', background: 'var(--bg)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)' }}>
               <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontWeight: 600, marginBottom: 4 }}>Active Price Book (v1.1)</div>
@@ -210,40 +329,39 @@ export default function FieldTicketScreen() {
         <Card>
           <TabBar activeTab={activeTab} onChange={setActiveTab} />
 
-          {/* Tab 1: Rig-up / Rig-down */}
           {activeTab === 1 && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
               {/* Visit Details */}
-              <Card>
-                <CardHeader title="Visit Details" />
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
-                  <div className="grid-2">
-                    <FormField label="Rig-Up Date" required error={errors.rigUpDate}>
-                      <Input type="date" value={form.rigUpDate} onChange={e => setF('rigUpDate', e.target.value)} />
-                    </FormField>
-                    <FormField label="Rig-Down Date" required error={errors.rigDownDate}>
-                      <Input type="date" value={form.rigDownDate} onChange={e => setF('rigDownDate', e.target.value)} />
-                    </FormField>
-                  </div>
-                  <div className="grid-2">
-                    <FormField label="Crew Source" required error={errors.crewSource}>
-                      <Input value={form.crewSource} onChange={e => setF('crewSource', e.target.value)} placeholder="e.g. Aly Energy — STX Crew 1" />
-                    </FormField>
-                    <FormField label="Manager Approval (Name)" required error={errors.managerApproval}>
-                      <Input value={form.managerApproval} onChange={e => setF('managerApproval', e.target.value)} placeholder="e.g. Kyle Odom" />
-                    </FormField>
-                  </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)', padding: 'var(--space-4)', background: 'var(--bg)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}>
+                <div style={{ fontWeight: 600, fontSize: 'var(--text-sm)', color: 'var(--navy)' }}>Visit Details</div>
+                <div className="grid-2">
+                  <FormField label="Rig-Up Date" required error={errors.rigUpDate}>
+                    <Input type="date" value={form.rigUpDate} onChange={e => setF('rigUpDate', e.target.value)} />
+                  </FormField>
+                  <FormField label="Rig-Down Date" required error={errors.rigDownDate}>
+                    <Input type="date" value={form.rigDownDate} onChange={e => setF('rigDownDate', e.target.value)} />
+                  </FormField>
                 </div>
-              </Card>
+                <div className="grid-2">
+                  <FormField label="Crew Source" required error={errors.crewSource}>
+                    <Input value={form.crewSource} onChange={e => setF('crewSource', e.target.value)} placeholder="e.g. Aly Energy — STX Crew 1" />
+                  </FormField>
+                  <FormField label="Manager Approval (Name)" required error={errors.managerApproval}>
+                    <Input value={form.managerApproval} onChange={e => setF('managerApproval', e.target.value)} placeholder="e.g. Kyle Odom" />
+                  </FormField>
+                </div>
+              </div>
 
               {/* Equipment Items */}
-              <Card>
-                <CardHeader
-                  title={`Equipment Items (${items.length})`}
-                  action={<Button variant="secondary" size="sm" type="button" onClick={addItem}>+ Add Item</Button>}
-                />
-                {errors.items && <StatusBanner type="error" className="mb-3">{errors.items}</StatusBanner>}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontWeight: 600, fontSize: 'var(--text-sm)', color: 'var(--navy)' }}>
+                    Equipment Items ({items.length})
+                  </span>
+                  <Button variant="secondary" size="sm" type="button" onClick={addItem}>+ Add Item</Button>
+                </div>
+                {errors.items && <StatusBanner type="error">{errors.items}</StatusBanner>}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
                   {items.map((item, idx) => (
                     <div key={item._key} style={{
                       border: '1px solid var(--border)',
@@ -254,8 +372,22 @@ export default function FieldTicketScreen() {
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-3)' }}>
                         <span style={{ fontWeight: 600, fontSize: 'var(--text-sm)', color: 'var(--navy)' }}>Item {idx + 1}</span>
                         {items.length > 1 && (
-                          <button type="button" onClick={() => removeItem(idx)}
-                            style={{ color: 'var(--status-flagged)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 18 }}>
+                          <button
+                            type="button"
+                            onClick={() => removeItem(idx)}
+                            aria-label={`Remove item ${idx + 1}`}
+                            style={{
+                              width: 44, height: 44,
+                              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                              color: 'var(--status-flagged)',
+                              background: 'rgba(198,40,40,0.08)',
+                              border: 'none',
+                              borderRadius: '50%',
+                              cursor: 'pointer',
+                              fontSize: 16,
+                              flexShrink: 0,
+                            }}
+                          >
                             ✕
                           </button>
                         )}
@@ -297,21 +429,23 @@ export default function FieldTicketScreen() {
                             <Input value={item.containmentSize} onChange={e => updateItem(idx, 'containmentSize', e.target.value)} placeholder="e.g. 20 BBL" />
                           </FormField>
                         </div>
-                        <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', cursor: 'pointer', fontSize: 'var(--text-sm)' }}>
-                          <input type="checkbox" checked={item.hasTruckingForm}
+                        <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', cursor: 'pointer', fontSize: 'var(--text-sm)', minHeight: 44 }}>
+                          <input
+                            type="checkbox"
+                            checked={item.hasTruckingForm}
                             onChange={e => updateItem(idx, 'hasTruckingForm', e.target.checked)}
-                            style={{ width: 16, height: 16, accentColor: 'var(--navy)' }} />
+                            style={{ width: 20, height: 20, accentColor: 'var(--navy)', cursor: 'pointer', flexShrink: 0 }}
+                          />
                           Trucking form received for this item
                         </label>
                       </div>
                     </div>
                   ))}
                 </div>
-              </Card>
+              </div>
             </div>
           )}
 
-          {/* Tab 2: Trucking Ticket */}
           {activeTab === 2 && jobId && (
             <TruckingTicketTab jobId={jobId} job={job} />
           )}
@@ -323,12 +457,10 @@ export default function FieldTicketScreen() {
           )}
         </Card>
 
-        {/* Submit Button */}
-        {activeTab === 1 && (
-          <div>
-            <Button type="submit" variant="primary" size="lg">Submit Rig-up / Rig-down Ticket</Button>
-          </div>
-        )}
+        {/* Submit always visible — submits the rig move ticket */}
+        <div>
+          <Button type="submit" variant="primary" size="lg">Submit Rig-up / Rig-down Ticket</Button>
+        </div>
       </form>
     </div>
   )

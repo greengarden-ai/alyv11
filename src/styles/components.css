@@ -56,7 +56,7 @@
 }
 .btn-ghost:hover { background: var(--bg); }
 
-.btn-sm { padding: 5px 12px; font-size: var(--text-xs); }
+.btn-sm { padding: 8px 14px; font-size: var(--text-xs); min-height: 36px; }
 .btn-lg { padding: 12px 24px; font-size: var(--text-base); }
 
 /* ── Badges ──────────────────────────────────────────────── */
@@ -80,6 +80,8 @@
 .badge-in-yard   { background: #e8f5e9; color: #1b5e20; }
 .badge-on-job    { background: var(--accent-light); color: #7a4f00; }
 .badge-sub-rented{ background: #f3e5f5; color: #4a148c; }
+.badge-rig-move  { background: #e8edf7; color: var(--navy-mid); }
+.badge-rental    { background: #ede8f7; color: #4a1a8c; }
 
 /* ── Cards ───────────────────────────────────────────────── */
 .card {

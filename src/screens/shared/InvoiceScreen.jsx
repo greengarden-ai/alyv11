@@ -14,10 +14,6 @@ import SagePostButton from '../../components/common/SagePostButton.jsx'
 import JobSummaryCard from '../../components/domain/JobSummaryCard.jsx'
 import RentalStintRow from '../../components/domain/RentalStintRow.jsx'
 
-function computeRigMoveTotal(ticket) {
-  return ticket.equipmentItems?.reduce((sum, item) => sum + (item.quantity ?? 1) * 0, 0) ?? 0
-}
-
 export default function InvoiceScreen() {
   const { ticketId } = useParams()
   const { state, dispatch } = useAppState()
@@ -136,7 +132,9 @@ export default function InvoiceScreen() {
                       <td style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-xs)' }}>{item.serialNumber}</td>
                       <td>{item.quantity}</td>
                       <td style={{ color: item.hasTruckingForm ? 'var(--status-approved)' : 'var(--status-flagged)', fontWeight: 700 }}>
-                        {item.hasTruckingForm ? '✓' : '✗'}
+                        <span aria-label={item.hasTruckingForm ? 'Yes' : 'No'}>
+                          {item.hasTruckingForm ? '✓' : '✗'}
+                        </span>
                       </td>
                     </tr>
                   ))}

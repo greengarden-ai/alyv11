@@ -1,6 +1,8 @@
 import { useState, useMemo } from 'react'
 import { initialUsers } from '../../data/users.js'
 import { genId } from '../../utils.js'
+import { useAppState } from '../../context/AppContext.jsx'
+import { UPDATE_CONFIG } from '../../context/actions.js'
 import Card, { CardHeader } from '../../components/common/Card.jsx'
 import Button from '../../components/common/Button.jsx'
 import Badge from '../../components/common/Badge.jsx'
@@ -25,7 +27,7 @@ function RoleBadge({ role }) {
 }
 
 export default function SuperAdminScreen() {
-  // Intentionally local state — does NOT flow into AppContext
+  const { state, dispatch } = useAppState()
   const [users, setUsers] = useState(initialUsers)
   const [search, setSearch] = useState('')
   const [roleFilter, setRoleFilter] = useState('All')
@@ -115,6 +117,43 @@ export default function SuperAdminScreen() {
           Note: their name still appears in approval chains elsewhere in the demo (as designed).
         </StatusBanner>
       )}
+
+      {/* System settings */}
+      <Card style={{ marginBottom: 'var(--space-6)' }}>
+        <CardHeader title="System Settings" />
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--space-4)' }}>
+          <label className="toggle" htmlFor="cfo-rental-toggle" style={{ flexShrink: 0, marginTop: 3 }}>
+            <input
+              id="cfo-rental-toggle"
+              type="checkbox"
+              checked={state.config.requireCFOApprovalOnRentals}
+              onChange={e => dispatch({ type: UPDATE_CONFIG, payload: { requireCFOApprovalOnRentals: e.target.checked } })}
+            />
+            <span className="toggle-slider" />
+          </label>
+          <div>
+            <div style={{ fontWeight: 600, fontSize: 'var(--text-base)' }}>
+              Require CFO approval on rental tickets
+              <span style={{
+                marginLeft: 'var(--space-2)',
+                padding: '2px 10px',
+                borderRadius: 'var(--radius-pill)',
+                fontSize: 'var(--text-xs)',
+                fontWeight: 700,
+                background: state.config.requireCFOApprovalOnRentals ? '#e8f5e9' : 'var(--accent-light)',
+                color: state.config.requireCFOApprovalOnRentals ? '#1b5e20' : '#7a4f00',
+              }}>
+                {state.config.requireCFOApprovalOnRentals ? 'ON' : 'OFF'}
+              </span>
+            </div>
+            <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', marginTop: 4 }}>
+              {state.config.requireCFOApprovalOnRentals
+                ? 'Rental tickets require CFO sign-off before proceeding to signature and invoicing.'
+                : 'Rental tickets proceed directly to signature after Regional Approver sign-off.'}
+            </div>
+          </div>
+        </div>
+      </Card>
 
       {/* Role breakdown */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 'var(--space-3)', marginBottom: 'var(--space-5)' }}>

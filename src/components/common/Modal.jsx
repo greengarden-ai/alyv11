@@ -1,14 +1,45 @@
-import { useEffect } from 'react'
+import { useEffect, useRef, useId } from 'react'
 
 export default function Modal({ title, onClose, children, width = 520 }) {
+  const dialogRef = useRef(null)
+  const titleId = useId()
+
   useEffect(() => {
-    const handler = (e) => { if (e.key === 'Escape') onClose() }
+    const trigger = document.activeElement
+    const focusable = dialogRef.current?.querySelectorAll(
+      'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])'
+    )
+    focusable?.[0]?.focus()
+    return () => { trigger?.focus() }
+  }, [])
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.key === 'Escape') { onClose(); return }
+      if (e.key === 'Tab' && dialogRef.current) {
+        const focusable = Array.from(dialogRef.current.querySelectorAll(
+          'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])'
+        ))
+        if (!focusable.length) return
+        const first = focusable[0]
+        const last = focusable[focusable.length - 1]
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault(); last.focus()
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault(); first.focus()
+        }
+      }
+    }
     document.addEventListener('keydown', handler)
     return () => document.removeEventListener('keydown', handler)
   }, [onClose])
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={titleId}
+      ref={dialogRef}
       style={{
         position: 'fixed', inset: 0,
         background: 'rgba(13,43,78,0.45)',
@@ -34,10 +65,11 @@ export default function Modal({ title, onClose, children, width = 520 }) {
           padding: 'var(--space-4) var(--space-5)',
           borderBottom: '1px solid var(--border)',
         }}>
-          <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 600 }}>{title}</h3>
+          <h3 id={titleId} style={{ fontSize: 'var(--text-lg)', fontWeight: 600 }}>{title}</h3>
           <button
             onClick={onClose}
-            style={{ fontSize: 20, color: 'var(--text-muted)', cursor: 'pointer', background: 'none', border: 'none', lineHeight: 1 }}
+            aria-label="Close"
+            style={{ fontSize: 20, color: 'var(--text-muted)', cursor: 'pointer', background: 'none', border: 'none', lineHeight: 1, width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 'var(--radius-sm)' }}
           >✕</button>
         </div>
         <div style={{ padding: 'var(--space-5)', flex: 1 }}>

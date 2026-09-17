@@ -216,7 +216,7 @@ export default function HelpScreen() {
       </p>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)', marginBottom: 'var(--space-6)' }}>
         {EASTER_EGGS.map(({ icon, label, where, what }) => (
-          <Card key={label} style={{ borderLeft: '4px solid var(--accent)' }}>
+          <Card key={label} style={{ background: 'var(--accent-light)', borderColor: '#f0c060' }}>
             <div style={{ display: 'flex', gap: 'var(--space-3)', alignItems: 'flex-start' }}>
               <span style={{ fontSize: 24, flexShrink: 0, marginTop: 2 }}>{icon}</span>
               <div>

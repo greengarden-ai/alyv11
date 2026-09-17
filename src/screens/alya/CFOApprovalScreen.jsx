@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAppState } from '../../context/AppContext.jsx'
-import { ADD_APPROVAL, UPDATE_CONFIG } from '../../context/actions.js'
+import { ADD_APPROVAL } from '../../context/actions.js'
 import { TICKET_STATUSES } from '../../data/constants.js'
 import { getJob, getCustomer, formatCurrency, computeStintTotal, formatDate } from '../../utils.js'
 import Card, { CardHeader } from '../../components/common/Card.jsx'
@@ -23,10 +23,6 @@ export default function CFOApprovalScreen() {
   const awaitingSig = state.tickets.filter(t =>
     t.status === TICKET_STATUSES.PENDING_SIGNATURE || t.status === TICKET_STATUSES.CFO_APPROVED
   )
-
-  function toggleRentalApproval(val) {
-    dispatch({ type: UPDATE_CONFIG, payload: { requireCFOApprovalOnRentals: val } })
-  }
 
   function approveCFO(ticket) {
     dispatch({
@@ -105,41 +101,42 @@ export default function CFOApprovalScreen() {
         <p className="page-subtitle">Pricing review and approval before signature and invoicing</p>
       </div>
 
-      {/* Rental approval toggle */}
-      <Card style={{ marginBottom: 'var(--space-6)' }}>
-        <CardHeader title="Admin Settings" />
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--space-4)' }}>
-          <label className="toggle" style={{ flexShrink: 0, marginTop: 3 }}>
-            <input
-              type="checkbox"
-              checked={state.config.requireCFOApprovalOnRentals}
-              onChange={e => toggleRentalApproval(e.target.checked)}
-            />
-            <span className="toggle-slider" />
-          </label>
-          <div>
-            <div style={{ fontWeight: 600, fontSize: 'var(--text-base)' }}>
-              Require CFO approval on rental tickets
-              <span style={{
-                marginLeft: 'var(--space-2)',
-                padding: '2px 10px',
-                borderRadius: 'var(--radius-pill)',
-                fontSize: 'var(--text-xs)',
-                fontWeight: 700,
-                background: state.config.requireCFOApprovalOnRentals ? '#e8f5e9' : 'var(--accent-light)',
-                color: state.config.requireCFOApprovalOnRentals ? '#1b5e20' : '#7a4f00',
-              }}>
-                {state.config.requireCFOApprovalOnRentals ? 'ON' : 'OFF'}
-              </span>
-            </div>
-            <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', marginTop: 4 }}>
-              {state.config.requireCFOApprovalOnRentals
-                ? 'Rental tickets must be reviewed by Alya before proceeding to signature.'
-                : 'Rental tickets proceed directly to signature after Regional Approver sign-off.'}
-            </div>
-          </div>
-        </div>
-      </Card>
+      {/* Rental approval config — read-only; managed in Super Admin */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 'var(--space-3)',
+        padding: 'var(--space-3) var(--space-4)',
+        background: 'var(--bg)',
+        borderRadius: 'var(--radius-md)',
+        border: '1px solid var(--border)',
+        marginBottom: 'var(--space-6)',
+        fontSize: 'var(--text-sm)',
+      }}>
+        <span style={{
+          padding: '2px 10px',
+          borderRadius: 'var(--radius-pill)',
+          fontSize: 'var(--text-xs)',
+          fontWeight: 700,
+          background: state.config.requireCFOApprovalOnRentals ? '#e8f5e9' : 'var(--accent-light)',
+          color: state.config.requireCFOApprovalOnRentals ? '#1b5e20' : '#7a4f00',
+          flexShrink: 0,
+        }}>
+          {state.config.requireCFOApprovalOnRentals ? 'ON' : 'OFF'}
+        </span>
+        <span style={{ color: 'var(--text-muted)' }}>
+          CFO approval on rental tickets is{' '}
+          <strong style={{ color: 'var(--text)' }}>
+            {state.config.requireCFOApprovalOnRentals ? 'required' : 'not required'}
+          </strong>.
+          {' '}Manage this in{' '}
+          <button
+            className="btn btn-ghost"
+            onClick={() => navigate('/alya/admin')}
+            style={{ padding: '0 4px', fontSize: 'inherit', minHeight: 'auto', display: 'inline', verticalAlign: 'baseline', color: 'var(--navy-light)', fontWeight: 600 }}
+          >
+            Super Admin
+          </button>.
+        </span>
+      </div>
 
       {/* Pending CFO approval */}
       {pending.length > 0 && (

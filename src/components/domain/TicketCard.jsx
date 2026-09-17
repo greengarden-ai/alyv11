@@ -23,7 +23,9 @@ export default function TicketCard({ ticket, action, expanded = false }) {
         <div style={{ flex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', flexWrap: 'wrap', marginBottom: 'var(--space-1)' }}>
             <span style={{ fontWeight: 700, fontSize: 'var(--text-sm)', color: 'var(--navy)' }}>{ticket.id}</span>
-            <Badge status={ticket.type === 'RIG_MOVE' ? 'draft' : 'signed'} label={ticket.type === 'RIG_MOVE' ? 'Rig Move' : 'Rental'} />
+            <span className={`badge ${ticket.type === 'RIG_MOVE' ? 'badge-rig-move' : 'badge-rental'}`}>
+              {ticket.type === 'RIG_MOVE' ? 'Rig Move' : 'Rental'}
+            </span>
             <Badge status={ticket.status} label={TICKET_STATUS_LABELS[ticket.status] ?? ticket.status} />
             {ticket.exceptionFlags?.length > 0 && (
               <Badge status="flagged" label={`${ticket.exceptionFlags.length} Flag${ticket.exceptionFlags.length > 1 ? 's' : ''}`} />

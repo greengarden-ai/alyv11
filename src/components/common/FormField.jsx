@@ -1,3 +1,5 @@
+import { useId, cloneElement, Children } from 'react'
+
 export default function FormField({
   label,
   required,
@@ -6,16 +8,24 @@ export default function FormField({
   children,
   className = '',
 }) {
+  const id = useId()
+
+  const childrenWithId = children
+    ? Children.map(children, (child, i) =>
+        i === 0 && child ? cloneElement(child, { id }) : child
+      )
+    : children
+
   return (
     <div className={`form-field ${className}`}>
       {label && (
-        <label className={`form-label${required ? ' required' : ''}`}>
+        <label htmlFor={id} className={`form-label${required ? ' required' : ''}`}>
           {label}
         </label>
       )}
-      {children}
+      {childrenWithId}
       {hint && !error && <span className="form-hint">{hint}</span>}
-      {error && <span className="form-error">{error}</span>}
+      {error && <span className="form-error" role="alert">{error}</span>}
     </div>
   )
 }
