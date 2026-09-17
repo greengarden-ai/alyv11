@@ -4,6 +4,7 @@
   align-items: center;
   gap: var(--space-2);
   padding: 8px 18px;
+  min-height: 44px;
   border-radius: var(--radius-md);
   font-size: var(--text-sm);
   font-weight: 600;
@@ -47,7 +48,7 @@
   background: var(--status-flagged);
   color: var(--text-inverse);
 }
-.btn-danger:hover { background: #a52020; }
+.btn-danger:hover { background: var(--status-flagged-dark); }
 
 .btn-ghost {
   background: transparent;
@@ -56,7 +57,7 @@
 }
 .btn-ghost:hover { background: var(--bg); }
 
-.btn-sm { padding: 8px 14px; font-size: var(--text-xs); min-height: 36px; }
+.btn-sm { padding: 8px 14px; font-size: var(--text-xs); min-height: 40px; }
 .btn-lg { padding: 12px 24px; font-size: var(--text-base); }
 
 /* ── Badges ──────────────────────────────────────────────── */
@@ -72,12 +73,12 @@
 }
 
 .badge-pending   { background: var(--accent-light); color: #7a4f00; }
-.badge-approved  { background: #e8f5e9; color: #1b5e20; }
-.badge-flagged   { background: #fde8e8; color: #7a0000; }
-.badge-draft     { background: #f0f0f3; color: var(--text-muted); }
+.badge-approved  { background: var(--status-approved-bg);  color: var(--status-approved-text); }
+.badge-flagged   { background: var(--status-flagged-bg);   color: var(--status-flagged-text); }
+.badge-draft     { background: var(--status-draft-bg);     color: var(--text-muted); }
 .badge-closed    { background: #e8eaf0; color: var(--status-closed); }
-.badge-signed    { background: #e3f0fb; color: #0d47a1; }
-.badge-in-yard   { background: #e8f5e9; color: #1b5e20; }
+.badge-signed    { background: var(--status-signed-bg);    color: var(--status-signed-text); }
+.badge-in-yard   { background: var(--status-approved-bg);  color: var(--status-approved-text); }
 .badge-on-job    { background: var(--accent-light); color: #7a4f00; }
 .badge-sub-rented{ background: #f3e5f5; color: #4a148c; }
 .badge-rig-move  { background: #e8edf7; color: var(--navy-mid); }
@@ -136,7 +137,7 @@
   vertical-align: middle;
 }
 .table tr:last-child td { border-bottom: none; }
-.table tr:hover td { background: #f8f9fc; }
+.table tr:hover td { background: var(--bg); }
 
 /* ── Form Fields ─────────────────────────────────────────── */
 .form-field {
@@ -191,10 +192,10 @@ textarea.form-input { resize: vertical; min-height: 80px; }
   font-size: var(--text-sm);
   border: 1px solid transparent;
 }
-.banner-info    { background: #e8f0fb; border-color: #b3c8f0; color: #1a3f6f; }
-.banner-success { background: #e8f5e9; border-color: #a5d6a7; color: #1b5e20; }
-.banner-warning { background: var(--accent-light); border-color: #f5c96c; color: #7a4f00; }
-.banner-error   { background: #fde8e8; border-color: #f4a7a7; color: #7a0000; }
+.banner-info    { background: var(--status-info-bg);      border-color: var(--status-info-border);     color: var(--status-info-text); }
+.banner-success { background: var(--status-approved-bg);  border-color: var(--status-approved-border); color: var(--status-approved-text); }
+.banner-warning { background: var(--accent-light);        border-color: var(--status-warning-border);  color: #7a4f00; }
+.banner-error   { background: var(--status-flagged-bg);   border-color: var(--status-flagged-border);  color: var(--status-flagged-text); }
 .banner-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
 
 /* ── Dividers ────────────────────────────────────────────── */

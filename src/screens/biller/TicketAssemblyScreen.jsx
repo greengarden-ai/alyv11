@@ -56,6 +56,11 @@ export default function TicketAssemblyScreen() {
 
   const pending = state.tickets.filter(t => t.status === TICKET_STATUSES.PENDING_BILLER)
   const others = state.tickets.filter(t => t.status !== TICKET_STATUSES.PENDING_BILLER)
+  const awaitingSignature = others.filter(t => t.status === TICKET_STATUSES.PENDING_SIGNATURE)
+  const signed = others.filter(t => t.status === TICKET_STATUSES.SIGNED)
+  const informational = others.filter(t =>
+    t.status !== TICKET_STATUSES.PENDING_SIGNATURE && t.status !== TICKET_STATUSES.SIGNED
+  )
 
   function approve(ticket) {
     dispatch({
@@ -171,11 +176,51 @@ export default function TicketAssemblyScreen() {
         </div>
       )}
 
-      {others.length > 0 && (
+      {awaitingSignature.length > 0 && (
+        <div style={{ marginBottom: 'var(--space-6)' }}>
+          <h3 className="section-title">Awaiting Customer Signature ({awaitingSignature.length})</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+            {awaitingSignature.map(ticket => (
+              <Card key={ticket.id}>
+                <TicketCard
+                  ticket={ticket}
+                  action={
+                    <Button variant="primary" size="sm" onClick={() => navigate(`/shared/signature/${ticket.id}`)}>
+                      ✍ Capture Signature
+                    </Button>
+                  }
+                />
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {signed.length > 0 && (
+        <div style={{ marginBottom: 'var(--space-6)' }}>
+          <h3 className="section-title">Signed — Ready to Invoice ({signed.length})</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+            {signed.map(ticket => (
+              <Card key={ticket.id}>
+                <TicketCard
+                  ticket={ticket}
+                  action={
+                    <Button variant="navy" size="sm" onClick={() => navigate(`/shared/invoice/${ticket.id}`)}>
+                      → Generate Invoice
+                    </Button>
+                  }
+                />
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {informational.length > 0 && (
         <div>
           <h3 className="section-title">All Other Tickets</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-            {others.map(ticket => (
+            {informational.map(ticket => (
               <TicketCard key={ticket.id} ticket={ticket} />
             ))}
           </div>

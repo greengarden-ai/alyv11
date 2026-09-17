@@ -40,6 +40,7 @@ export function reducer(state, action) {
                 ...t,
                 status: action.payload.newStatus,
                 approvalChain: [...t.approvalChain, action.payload.entry],
+                ...(action.payload.entry.cfoPrice != null ? { cfoPrice: action.payload.entry.cfoPrice } : {}),
               }
             : t
         ),

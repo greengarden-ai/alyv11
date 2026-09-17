@@ -3,6 +3,14 @@ import { useAppState } from '../../context/AppContext.jsx'
 import { LOGOUT } from '../../context/actions.js'
 import { ROLE_LABELS, ROLES } from '../../data/constants.js'
 
+const MenuIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <line x1="3" y1="6" x2="21" y2="6"/>
+    <line x1="3" y1="12" x2="21" y2="12"/>
+    <line x1="3" y1="18" x2="21" y2="18"/>
+  </svg>
+)
+
 export default function Topbar({ onMenuToggle }) {
   const { state, dispatch } = useAppState()
   const navigate = useNavigate()
@@ -28,11 +36,17 @@ export default function Topbar({ onMenuToggle }) {
         className="hide-desktop"
         onClick={onMenuToggle}
         style={{
-          color: 'white', fontSize: 20, background: 'none',
-          border: 'none', cursor: 'pointer', padding: 4,
+          color: 'white', background: 'none',
+          border: 'none', cursor: 'pointer',
+          padding: 'var(--space-2)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          minWidth: 44, minHeight: 44,
+          borderRadius: 'var(--radius-md)',
         }}
         aria-label="Toggle menu"
-      >☰</button>
+      >
+        <MenuIcon />
+      </button>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', flex: 1 }}>
         <span style={{
@@ -61,21 +75,25 @@ export default function Topbar({ onMenuToggle }) {
         <button
           onClick={() => navigate('/alya/help')}
           style={{
-            color: 'rgba(255,255,255,0.7)', background: 'none',
-            border: 'none', cursor: 'pointer', fontSize: 18,
-            padding: 4,
+            color: 'rgba(255,255,255,0.85)', background: 'none',
+            border: 'none', cursor: 'pointer',
+            fontSize: 'var(--text-base)', fontWeight: 700,
+            minWidth: 44, minHeight: 44,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            borderRadius: 'var(--radius-md)',
           }}
-          title="Help & Navigation Guide"
-          aria-label="Help"
+          aria-label="Help & Navigation Guide"
         >?</button>
         <button
           onClick={handleSwitchRole}
+          aria-label={state.currentRole ? `Switch role — currently ${ROLE_LABELS[state.currentRole]}` : 'Switch role'}
           style={{
-            color: 'rgba(255,255,255,0.85)',
+            color: 'rgba(255,255,255,0.9)',
             background: 'none',
-            border: '1px solid rgba(255,255,255,0.25)',
+            border: '1px solid rgba(255,255,255,0.35)',
             borderRadius: 'var(--radius-md)',
             padding: '5px 12px',
+            minHeight: 44,
             fontSize: 'var(--text-xs)',
             fontWeight: 600,
             cursor: 'pointer',

@@ -14,6 +14,11 @@ export default function Modal({ title, onClose, children, width = 520 }) {
   }, [])
 
   useEffect(() => {
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = '' }
+  }, [])
+
+  useEffect(() => {
     const handler = (e) => {
       if (e.key === 'Escape') { onClose(); return }
       if (e.key === 'Tab' && dialogRef.current) {
@@ -69,7 +74,13 @@ export default function Modal({ title, onClose, children, width = 520 }) {
           <button
             onClick={onClose}
             aria-label="Close"
-            style={{ fontSize: 20, color: 'var(--text-muted)', cursor: 'pointer', background: 'none', border: 'none', lineHeight: 1, width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 'var(--radius-sm)' }}
+            style={{
+              fontSize: 18, color: 'var(--text-muted)', cursor: 'pointer',
+              background: 'none', border: 'none', lineHeight: 1,
+              width: 44, height: 44,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              borderRadius: 'var(--radius-sm)',
+            }}
           >✕</button>
         </div>
         <div style={{ padding: 'var(--space-5)', flex: 1 }}>

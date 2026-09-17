@@ -18,6 +18,7 @@ export default function CFOApprovalScreen() {
   const navigate = useNavigate()
   const [expanded, setExpanded] = useState(null)
   const [notes, setNotes] = useState({})
+  const [prices, setPrices] = useState({})
 
   const pending = state.tickets.filter(t => t.status === TICKET_STATUSES.PENDING_CFO)
   const awaitingSig = state.tickets.filter(t =>
@@ -35,6 +36,7 @@ export default function CFOApprovalScreen() {
           approvedBy: 'alya',
           approvedAt: new Date().toISOString(),
           notes: notes[ticket.id] ?? '',
+          ...(ticket.type === 'RIG_MOVE' ? { cfoPrice: parseFloat(prices[ticket.id] ?? 0) || 0 } : {}),
         },
       },
     })
@@ -75,6 +77,27 @@ export default function CFOApprovalScreen() {
                 {entry.step}: {entry.approvedAt?.slice(0, 10)} {entry.notes && `· "${entry.notes}"`}
               </div>
             ))}
+          </div>
+        )}
+
+        {ticket.type === 'RIG_MOVE' && (
+          <div style={{ marginBottom: 'var(--space-3)' }}>
+            <label style={{ display: 'block', fontSize: 'var(--text-sm)', fontWeight: 600, marginBottom: 'var(--space-2)' }}>
+              Total Billable Amount ($) <span style={{ color: 'var(--status-flagged)' }}>*</span>
+            </label>
+            <input
+              className="form-input"
+              type="number"
+              min="0"
+              step="0.01"
+              style={{ maxWidth: 200 }}
+              placeholder="0.00"
+              value={prices[ticket.id] ?? ''}
+              onChange={e => setPrices(p => ({ ...p, [ticket.id]: e.target.value }))}
+            />
+            <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginTop: 4 }}>
+              Sets the invoice total for this rig move ticket.
+            </div>
           </div>
         )}
 

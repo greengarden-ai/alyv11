@@ -41,7 +41,7 @@ export default function InvoiceScreen() {
 
   const total = ticket.type === 'RENTAL'
     ? computeStintTotal(ticket.stints ?? [])
-    : null  // rig move pricing is set by CFO — shown as TBD in prototype
+    : (ticket.cfoPrice ?? 0)
 
   function generateInvoice() {
     const inv = {
@@ -141,8 +141,13 @@ export default function InvoiceScreen() {
                 </tbody>
               </table>
             </div>
-            <div style={{ marginTop: 'var(--space-3)', textAlign: 'right', fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>
-              Pricing to be confirmed by CFO — contact billing for final amount.
+            <div style={{ marginTop: 'var(--space-4)', textAlign: 'right' }}>
+              <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>
+                {ticket.cfoPrice != null ? 'CFO-Approved Amount' : 'Total Due'}
+              </div>
+              <div style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, color: 'var(--navy)' }}>
+                {formatCurrency(total)}
+              </div>
             </div>
           </div>
         )}

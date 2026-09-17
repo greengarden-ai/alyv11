@@ -2,13 +2,14 @@ import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAppState } from '../../context/AppContext.jsx'
 import { ADD_SIGNATURE } from '../../context/actions.js'
-import { genId, getTicket, getJob, getCustomer, formatDate } from '../../utils.js'
+import { genId, getTicket, getJob, getCustomer, formatDate, computeStintTotal, formatCurrency } from '../../utils.js'
 import Card, { CardHeader } from '../../components/common/Card.jsx'
 import FormField, { Input } from '../../components/common/FormField.jsx'
 import Button from '../../components/common/Button.jsx'
 import StatusBanner from '../../components/common/StatusBanner.jsx'
 import SignaturePad from '../../components/common/SignaturePad.jsx'
 import JobSummaryCard from '../../components/domain/JobSummaryCard.jsx'
+import RentalStintRow from '../../components/domain/RentalStintRow.jsx'
 import Badge from '../../components/common/Badge.jsx'
 
 export default function SignatureScreen() {
@@ -87,14 +88,75 @@ export default function SignatureScreen() {
           <Badge status={ticket.status} />
         </div>
         {ticket.type === 'RIG_MOVE' && (
-          <div style={{ marginTop: 'var(--space-3)', fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>
-            Rig-up: {formatDate(ticket.rigUpDate)} → Rig-down: {formatDate(ticket.rigDownDate)}
-            {' · '}{ticket.equipmentItems?.length ?? 0} equipment item(s)
+          <div style={{ marginTop: 'var(--space-4)' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
+              <div>
+                <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontWeight: 600 }}>Rig-Up</div>
+                <div style={{ fontWeight: 600, fontSize: 'var(--text-sm)' }}>{formatDate(ticket.rigUpDate)}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontWeight: 600 }}>Rig-Down</div>
+                <div style={{ fontWeight: 600, fontSize: 'var(--text-sm)' }}>{formatDate(ticket.rigDownDate)}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontWeight: 600 }}>Crew</div>
+                <div style={{ fontSize: 'var(--text-sm)' }}>{ticket.crewSource}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontWeight: 600 }}>Manager Approval</div>
+                <div style={{ fontSize: 'var(--text-sm)' }}>{ticket.managerApproval}</div>
+              </div>
+            </div>
+            <div className="table-wrapper">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Equipment</th>
+                    <th>Ownership</th>
+                    <th>Serial</th>
+                    <th>Qty</th>
+                    <th>Trucking</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {ticket.equipmentItems?.map((item, i) => (
+                    <tr key={i}>
+                      <td>{item.description}</td>
+                      <td>{item.ownership}</td>
+                      <td style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-xs)' }}>{item.serialNumber}</td>
+                      <td>{item.quantity}</td>
+                      <td style={{ color: item.hasTruckingForm ? 'var(--status-approved)' : 'var(--status-flagged)', fontWeight: 700 }}>
+                        {item.hasTruckingForm ? '✓' : '✗'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {ticket.cfoPrice != null && (
+              <div style={{ marginTop: 'var(--space-3)', textAlign: 'right' }}>
+                <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontWeight: 600 }}>CFO-Approved Amount</div>
+                <div style={{ fontSize: 'var(--text-xl)', fontWeight: 700, color: 'var(--navy)' }}>
+                  {formatCurrency(ticket.cfoPrice)}
+                </div>
+              </div>
+            )}
           </div>
         )}
         {ticket.type === 'RENTAL' && (
-          <div style={{ marginTop: 'var(--space-3)', fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>
-            Well: {ticket.wellName} · {ticket.stints?.length ?? 0} rental stint(s)
+          <div style={{ marginTop: 'var(--space-4)' }}>
+            <div style={{ fontWeight: 600, fontSize: 'var(--text-sm)', marginBottom: 'var(--space-3)' }}>
+              Well: {ticket.wellName}
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              {ticket.stints?.map((s, i) => <RentalStintRow key={s.id ?? i} stint={s} index={i} />)}
+            </div>
+            <div style={{ marginTop: 'var(--space-3)', textAlign: 'right' }}>
+              <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontWeight: 600 }}>Total</div>
+              <div style={{ fontSize: 'var(--text-xl)', fontWeight: 700, color: 'var(--navy)' }}>
+                {formatCurrency(computeStintTotal(ticket.stints ?? []))}
+              </div>
+            </div>
           </div>
         )}
       </Card>

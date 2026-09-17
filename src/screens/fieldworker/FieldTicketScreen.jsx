@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAppState } from '../../context/AppContext.jsx'
 import { CREATE_TICKET } from '../../context/actions.js'
@@ -57,7 +57,7 @@ const TabBar = ({ activeTab, onChange }) => {
             cursor: tab.disabled ? 'not-allowed' : 'pointer',
             fontWeight: activeTab === tab.id ? 600 : 500,
             fontSize: 'var(--text-sm)',
-            color: activeTab === tab.id ? 'var(--navy)' : tab.disabled ? 'var(--text-muted)' : 'var(--text-secondary)',
+            color: activeTab === tab.id ? 'var(--navy)' : tab.disabled ? 'var(--text-muted)' : 'var(--text-muted)',
             borderBottom: activeTab === tab.id ? '3px solid var(--navy)' : 'none',
             opacity: tab.disabled ? 0.5 : 1,
             transition: 'all 0.2s',
@@ -83,6 +83,7 @@ export default function FieldTicketScreen() {
   const [savedAt, setSavedAt] = useState(null)
 
   const isDirty = Boolean(jobId || form.crewSource || form.rigUpDate || form.rigDownDate || form.managerApproval)
+  const autosaveTimerRef = useRef(null)
 
   // Load draft on mount
   useEffect(() => {
@@ -96,15 +97,19 @@ export default function FieldTicketScreen() {
     } catch {}
   }, [])
 
-  // Autosave on every change
+  // Autosave with 500ms debounce
   useEffect(() => {
     if (!isDirty) return
-    try {
-      localStorage.setItem(DRAFT_KEY, JSON.stringify({
-        jobId, form, items, activeTab,
-        savedAt: new Date().toISOString(),
-      }))
-    } catch {}
+    clearTimeout(autosaveTimerRef.current)
+    autosaveTimerRef.current = setTimeout(() => {
+      try {
+        localStorage.setItem(DRAFT_KEY, JSON.stringify({
+          jobId, form, items, activeTab,
+          savedAt: new Date().toISOString(),
+        }))
+      } catch {}
+    }, 500)
+    return () => clearTimeout(autosaveTimerRef.current)
   }, [jobId, form, items, activeTab, isDirty])
 
   // Warn on browser close/reload when dirty

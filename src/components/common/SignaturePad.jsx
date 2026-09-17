@@ -9,7 +9,7 @@ export default function SignaturePad({ onConfirm }) {
   useEffect(() => {
     const canvas = canvasRef.current
     const ctx = canvas.getContext('2d')
-    ctx.strokeStyle = '#1A1F2E'
+    ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--text').trim() || '#1A1F2E'
     ctx.lineWidth = 2.5
     ctx.lineCap = 'round'
     ctx.lineJoin = 'round'
@@ -61,7 +61,7 @@ export default function SignaturePad({ onConfirm }) {
       <div style={{
         border: '1.5px dashed var(--border-dark)',
         borderRadius: 'var(--radius-md)',
-        background: '#fafbfc',
+        background: 'var(--bg)',
         position: 'relative',
         marginBottom: 'var(--space-3)',
       }}>
@@ -69,6 +69,7 @@ export default function SignaturePad({ onConfirm }) {
           ref={canvasRef}
           width={600}
           height={180}
+          aria-label="Signature pad — draw your signature with a pointer"
           style={{ display: 'block', width: '100%', cursor: 'crosshair', touchAction: 'none' }}
           onPointerDown={startDraw}
           onPointerMove={draw}

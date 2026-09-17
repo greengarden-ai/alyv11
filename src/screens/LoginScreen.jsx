@@ -4,20 +4,44 @@ import { SET_ROLE } from '../context/actions.js'
 import { ROLES, ROLE_LABELS, ROLE_DESCRIPTIONS, ROLE_DEFAULT_ROUTES } from '../data/constants.js'
 
 const ROLE_ICONS = {
-  CS_REP:       '📋',
-  FIELD_WORKER: '🔧',
-  BILLER:       '📂',
-  APPROVER_STX: '✅',
-  APPROVER_WTX: '✅',
-  ALYA:         '👤',
+  CS_REP: (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+    </svg>
+  ),
+  FIELD_WORKER: (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/>
+    </svg>
+  ),
+  BILLER: (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>
+    </svg>
+  ),
+  APPROVER_STX: (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+    </svg>
+  ),
+  APPROVER_WTX: (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+    </svg>
+  ),
+  ALYA: (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+    </svg>
+  ),
 }
 
 const ROLE_ACCENT = {
   CS_REP:       'var(--navy-light)',
   FIELD_WORKER: 'var(--navy)',
   BILLER:       'var(--navy-mid)',
-  APPROVER_STX: '#2E7D32',
-  APPROVER_WTX: '#1565C0',
+  APPROVER_STX: 'var(--status-approved)',
+  APPROVER_WTX: 'var(--status-signed)',
   ALYA:         'var(--accent-dark)',
 }
 
@@ -92,7 +116,7 @@ export default function LoginScreen() {
               borderRadius: 'var(--radius-md)',
               background: ROLE_ACCENT[role],
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 22,
+              color: 'var(--text-inverse)',
               marginBottom: 'var(--space-3)',
             }}>
               {ROLE_ICONS[role]}

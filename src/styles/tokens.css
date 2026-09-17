@@ -20,12 +20,26 @@
   --text-accent:  #C8841A;
 
   /* Status Semantics */
-  --status-pending:   #F5A623;
-  --status-approved:  #2E7D32;
-  --status-flagged:   #C62828;
-  --status-draft:     #5A6478;
-  --status-closed:    #37474F;
-  --status-signed:    #1565C0;
+  --status-pending:        #F5A623;
+  --status-approved:       #2E7D32;
+  --status-approved-bg:    #e8f5e9;
+  --status-approved-border:#a5d6a7;
+  --status-approved-text:  #1b5e20;
+  --status-flagged:        #C62828;
+  --status-flagged-dark:   #a52020;
+  --status-flagged-bg:     #fde8e8;
+  --status-flagged-border: #f4a7a7;
+  --status-flagged-text:   #7a0000;
+  --status-draft:          #5A6478;
+  --status-draft-bg:       #f0f0f3;
+  --status-closed:         #37474F;
+  --status-signed:         #1565C0;
+  --status-signed-bg:      #e3f0fb;
+  --status-signed-text:    #0d47a1;
+  --status-info-bg:        #e8f0fb;
+  --status-info-border:    #b3c8f0;
+  --status-info-text:      #1a3f6f;
+  --status-warning-border: #f5c96c;
 
   /* SLA Aging */
   --age-ok:       #2E7D32;
