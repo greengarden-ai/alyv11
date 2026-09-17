@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate, useBlocker } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useAppState } from '../../context/AppContext.jsx'
 import { CREATE_TICKET } from '../../context/actions.js'
 import { genId } from '../../utils.js'
@@ -64,12 +64,6 @@ export default function RentalTicketScreen() {
     window.addEventListener('beforeunload', handler)
     return () => window.removeEventListener('beforeunload', handler)
   }, [isDirty])
-
-  // Block in-app navigation when dirty
-  const blocker = useBlocker(
-    ({ currentLocation, nextLocation }) =>
-      isDirty && !submitted && currentLocation.pathname !== nextLocation.pathname
-  )
 
   function restoreDraft() {
     try {
@@ -165,33 +159,6 @@ export default function RentalTicketScreen() {
 
   return (
     <div>
-      {/* Navigation blocker confirmation */}
-      {blocker.state === 'blocked' && (
-        <div style={{
-          position: 'fixed', inset: 0, zIndex: 1000,
-          background: 'rgba(13,43,78,0.5)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          padding: 'var(--space-4)',
-        }}>
-          <div style={{
-            background: 'var(--card)', borderRadius: 'var(--radius-lg)',
-            boxShadow: 'var(--shadow-lg)', padding: 'var(--space-6)',
-            maxWidth: 400, width: '100%',
-          }}>
-            <h3 style={{ fontWeight: 700, fontSize: 'var(--text-lg)', marginBottom: 'var(--space-2)' }}>
-              Leave without saving?
-            </h3>
-            <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', marginBottom: 'var(--space-5)' }}>
-              Your rental ticket data will be saved as a draft and restored when you return.
-            </p>
-            <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
-              <Button variant="danger" onClick={() => blocker.proceed()}>Leave</Button>
-              <Button variant="ghost" onClick={() => blocker.reset()}>Stay on page</Button>
-            </div>
-          </div>
-        </div>
-      )}
-
       <div className="page-header">
         <h1 className="page-title">Rental Ticket</h1>
         <p className="page-subtitle">Capture rental periods for a well</p>
